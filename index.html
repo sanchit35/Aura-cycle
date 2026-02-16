@@ -112,12 +112,16 @@
         document.getElementById('addPeriodBtn').onclick = async () => {
             const date = prompt("Enter Start Date (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
             if (!date) return;
-            await fetch('/api/add', {
+            const res = await fetch('/api/add', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ date, duration: 5 })
             });
-            updateUI();
+            if (res.ok) {
+                updateUI();
+            } else {
+                alert("Failed to save. Check server.");
+            }
         };
 
         updateUI();

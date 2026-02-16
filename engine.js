@@ -47,16 +47,18 @@ class PeriodEngine {
     }
 
     getPhase(currentDate) {
-        // Simple phase logic based on a standard cycle (can be refined with user data)
         const last = new Date(this.data.cycles[this.data.cycles.length - 1]?.start);
-        if (!last) return 'Unknown';
+        if (!last || isNaN(last.getTime())) return 'Welcome to Aura';
 
-        const dayOfCycle = Math.floor((new Date(currentDate) - last) / (1000 * 60 * 60 * 24)) + 1;
+        const diffTime = new Date(currentDate) - last;
+        const dayOfCycle = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
+        if (dayOfCycle < 1) return 'Cycle starting soon';
         if (dayOfCycle <= 5) return 'Menstrual (Rest & Reflect)';
         if (dayOfCycle <= 13) return 'Follicular (Set Intentions)';
-        if (dayOfCycle <= 15) return 'Ovulatory (Communicate & Peak)';
-        return 'Luteal (Turn Inward)';
+        if (dayOfCycle <= 15) return 'Ovulatory (Peak Energy)';
+        if (dayOfCycle <= 32) return 'Luteal (Turn Inward)';
+        return 'Late (Check logs)';
     }
 }
 
