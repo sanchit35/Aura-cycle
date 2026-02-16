@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aura Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --p-menstrual: #FF6B6B; --p-follicular: #4D96FF; --p-ovulatory: #6BCB77; --p-luteal: #FFD93D; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; overflow-x: hidden; }
+        .card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .phase-menstrual { background: linear-gradient(135deg, #FF6B6B, #FFBDBD); color: #000; }
+        .phase-follicular { background: linear-gradient(135deg, #4D96FF, #6BCB77); color: #000; }
+        .phase-ovulatory { background: linear-gradient(135deg, #6BCB77, #FFD93D); color: #000; }
+        .phase-luteal { background: linear-gradient(135deg, #FFD93D, #FF6B6B); color: #000; }
+        #loginOverlay { background: #000; z-index: 100; }
+        .btn-active { transform: scale(0.95); opacity: 0.8; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <div id="loginOverlay" class="fixed inset-0 flex flex-col items-center justify-center p-8 transition-opacity duration-1000">
+        <div class="mb-12 text-center">
+            <h1 class="text-6xl font-extrabold tracking-tighter mb-2">AURA<span class="text-pink-500">.</span></h1>
+            <p class="text-gray-500 font-medium">Professional Cycle Intelligence</p>
+        </div>
+        <div id="buttonDiv"></div>
+        <button onclick="skipLogin()" class="mt-8 text-xs font-bold text-gray-600 uppercase tracking-widest hover:text-white transition-colors">Enter Dashboard</button>
+    </div>
+
+    <main id="appContent" class="max-w-md mx-auto p-6 hidden">
+        <header class="flex justify-between items-center mb-10">
+            <div class="flex flex-col">
+                <span id="userGreeting" class="text-gray-500 text-sm font-bold uppercase tracking-widest">Welcome Back</span>
+                <h1 class="text-3xl font-extrabold tracking-tight italic">AURA<span class="text-pink-500">.</span></h1>
+            </div>
+            <button id="addBtn" class="w-14 h-14 bg-white text-black rounded-2xl shadow-2xl flex items-center justify-center text-3xl font-bold">+</button>
+        </header>
+
+        <!-- Current Phase Card -->
+        <div id="phaseCard" class="rounded-[2.5rem] p-8 mb-8 shadow-2xl transition-all duration-700">
+            <p class="opacity-60 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Current Phase</p>
+            <h2 id="currentPhase" class="text-4xl font-extrabold leading-none mb-6">Awaiting Data</h2>
+            <div class="bg-black/10 backdrop-blur-sm rounded-2xl p-5 border border-black/5">
+                <p id="advice" class="text-sm font-semibold leading-relaxed italic">Log your last period to reveal your biological profile.</p>
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="card p-6 rounded-[2rem]">
+                <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-2">Next Cycle</p>
+                <p id="nextDate" class="text-2xl font-extrabold">--</p>
+            </div>
+            <div class="card p-6 rounded-[2rem]">
+                <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-2">Fertility</p>
+                <p id="fertilityLabel" class="text-2xl font-extrabold text-pink-500">Low</p>
+            </div>
+        </div>
+
+        <!-- Loggers -->
+        <section class="mb-10">
+            <h3 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-4">Metric Loggers</h3>
+            <div class="grid grid-cols-4 gap-3 text-center">
+                <button onclick="log('cramps')" class="card p-4 rounded-2xl aspect-square flex flex-col items-center justify-center gap-2">
+                    <span class="text-xl">😣</span>
+                    <span class="text-[8px] font-black text-gray-400">PAIN</span>
+                </button>
+                <button onclick="log('mood')" class="card p-4 rounded-2xl aspect-square flex flex-col items-center justify-center gap-2">
+                    <span class="text-xl">🎭</span>
+                    <span class="text-[8px] font-black text-gray-400">MOOD</span>
+                </button>
+                <button onclick="log('energy')" class="card p-4 rounded-2xl aspect-square flex flex-col items-center justify-center gap-2">
+                    <span class="text-xl">⚡</span>
+                    <span class="text-[8px] font-black text-gray-400">NRG</span>
+                </button>
+                <button onclick="log('sleep')" class="card p-4 rounded-2xl aspect-square flex flex-col items-center justify-center gap-2">
+                    <span class="text-xl">🌙</span>
+                    <span class="text-[8px] font-black text-gray-400">REST</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Insights -->
+        <section class="space-y-4">
+            <h3 class="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-4">Protocol Optimization</h3>
+            <div class="card p-6 rounded-3xl flex items-center gap-5">
+                <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-2xl">⚡</div>
+                <div>
+                    <p class="text-[10px] font-black uppercase text-gray-500 mb-1">Workout Intensity</p>
+                    <p id="workout" class="text-sm font-bold">Awaiting Data...</p>
+                </div>
+            </div>
+            <div class="card p-6 rounded-3xl flex items-center gap-5">
+                <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-2xl">🍏</div>
+                <div>
+                    <p class="text-[10px] font-black uppercase text-gray-500 mb-1">Nutritional Focus</p>
+                    <p id="diet" class="text-sm font-bold">Awaiting Data...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const config = {
+            'Menstrual': { class: 'phase-menstrual', advice: 'Lowest hormone levels. Prioritize restorative sleep and iron intake.', workout: 'Low intensity / Mobility', diet: 'Iron, Magnesium, Hydration' },
+            'Follicular': { class: 'phase-follicular', advice: 'Estrogen rising. Creativity and social openness are peaking.', workout: 'Light Cardio / Group Classes', diet: 'Fresh veggies, lean protein' },
+            'Ovulatory': { class: 'phase-ovulatory', advice: 'Hormonal peak. Confidence and strength are at their max.', workout: 'HIIT / Heavy Strength', diet: 'Complex Carbs, Quinoa' },
+            'Luteal': { class: 'phase-luteal', advice: 'Progesterone dominance. Metabolism increases; caloric needs go up.', workout: 'Resistance Training / Pilates', diet: 'Higher fats, complex carbs' }
+        };
+
+        function skipLogin() {
+            document.getElementById('loginOverlay').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('appContent').style.display = 'block';
+                initData();
+            }, 600);
+        }
+
+        async function initData() {
+            const res = await fetch('/api/status');
+            const data = await res.json();
+            const phaseRaw = data.phase.split(' ')[0];
+            const meta = config[phaseRaw] || { class: 'card', advice: 'Log your first cycle to unlock analysis.', workout: '---', diet: '---' };
+            
+            document.getElementById('phaseCard').className = `rounded-[2.5rem] p-8 mb-8 shadow-2xl transition-all duration-700 ${meta.class}`;
+            document.getElementById('currentPhase').innerText = data.phase;
+            document.getElementById('nextDate').innerText = data.next;
+            document.getElementById('advice').innerText = meta.advice;
+            document.getElementById('workout').innerText = meta.workout;
+            document.getElementById('diet').innerText = meta.diet;
+        }
+
+        document.getElementById('addBtn').onclick = async () => {
+            const date = prompt("Period Start Date (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
+            if (!date) return;
+            await fetch('/api/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ date, duration: 5 })
+            });
+            initData();
+        };
+
+        async function log(type) {
+            const val = prompt(`Rate ${type} (1-10):`, "5");
+            if (!val) return;
+            await fetch('/api/symptoms', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ date: new Date().toISOString().split('T')[0], symptoms: {[type]: val} })
+            });
+            alert('Logged.');
+        }
+
+        // Google Sign-In setup
+        window.onload = function () {
+            google.accounts.id.initialize({
+                client_id: "CLIENT_ID_PLACEHOLDER",
+                callback: (r) => skipLogin()
+            });
+            google.accounts.id.renderButton(document.getElementById("buttonDiv"), { theme: "filled_black", size: "large", shape: "pill" });
+        }
+    </script>
+</body>
+</html>
