@@ -1,0 +1,7 @@
+{
+  "name": "AuraPro",
+  "appId": "ai.openclaw.aurapro",
+  "appName": "Aura Pro",
+  "webDir": "aura_app",
+  "bundledWebRuntime": false
+}
