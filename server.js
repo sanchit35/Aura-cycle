@@ -22,6 +22,14 @@ const server = http.createServer((req, res) => {
             engine.addPeriod(params.date, params.duration);
             res.end(JSON.stringify({ success: true }));
         });
+    } else if (req.url === '/api/symptoms' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            const params = JSON.parse(body);
+            engine.addSymptom(params.date, params.symptoms);
+            res.end(JSON.stringify({ success: true }));
+        });
     } else {
         res.writeHead(404);
         res.end();

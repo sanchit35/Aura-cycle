@@ -5,21 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aura Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background: #fafafa; }
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .phase-menstrual { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
         .phase-follicular { background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); }
         .phase-ovulatory { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
         .phase-luteal { background: linear-gradient(135deg, #fccb90 0%, #d57eeb 100%); }
+        #loginOverlay { backdrop-filter: blur(10px); display: flex; }
     </style>
 </head>
 <body class="p-6">
+    <!-- Google Login Overlay -->
+    <div id="loginOverlay" class="fixed inset-0 bg-white/80 z-50 flex-col items-center justify-center">
+        <h1 class="text-4xl font-black mb-2 tracking-tighter">AURA<span class="text-pink-500">.</span></h1>
+        <p class="text-gray-500 mb-8 font-medium">Your biological dashboard.</p>
+        <div id="buttonDiv"></div>
+        <button onclick="skipLogin()" class="mt-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Continue locally</button>
+    </div>
+
     <div class="max-w-md mx-auto">
         <header class="mb-8 flex justify-between items-center">
             <h1 class="text-3xl font-black text-gray-900 tracking-tighter italic">AURA<span class="text-pink-500">.</span></h1>
-            <button id="addPeriodBtn" class="bg-black text-white w-12 h-12 rounded-2xl shadow-xl font-bold text-2xl">+</button>
+            <div class="flex gap-2">
+                <button id="addPeriodBtn" class="bg-black text-white w-12 h-12 rounded-2xl shadow-xl font-bold text-2xl">+</button>
+            </div>
         </header>
 
         <div id="phaseCard" class="rounded-3xl p-8 text-white mb-6 shadow-2xl transition-all duration-500">
@@ -38,6 +49,17 @@
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                 <p class="text-gray-400 text-[10px] uppercase font-black mb-1">Fertility</p>
                 <p id="pregChance" class="text-xl font-black text-pink-500">Low</p>
+            </div>
+        </div>
+
+        <!-- Duration & Symptoms -->
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-6">
+            <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Symptom Logger</h3>
+            <div class="flex justify-between gap-2">
+                <button onclick="logSymptom('cramps')" class="bg-gray-50 hover:bg-pink-100 p-3 rounded-2xl transition-colors">😫<br><span class="text-[8px] font-bold">CRAMPS</span></button>
+                <button onclick="logSymptom('bloating')" class="bg-gray-50 hover:bg-pink-100 p-3 rounded-2xl transition-colors">🎈<br><span class="text-[8px] font-bold">BLOAT</span></button>
+                <button onclick="logSymptom('energy')" class="bg-gray-50 hover:bg-pink-100 p-3 rounded-2xl transition-colors">⚡<br><span class="text-[8px] font-bold">ENERGY</span></button>
+                <button onclick="logSymptom('mood')" class="bg-gray-50 hover:bg-pink-100 p-3 rounded-2xl transition-colors">🎭<br><span class="text-[8px] font-bold">MOOD</span></button>
             </div>
         </div>
 
@@ -62,45 +84,37 @@
 
     <script>
         const phaseData = {
-            'Menstrual': {
-                class: 'phase-menstrual',
-                advice: 'Your hormones are at their lowest. Prioritize rest and iron-rich foods.',
-                workout: 'Gentle stretching or restorative yoga.',
-                diet: 'Red meat, spinach, dark chocolate.',
-                preg: 'Low'
-            },
-            'Follicular': {
-                class: 'phase-follicular',
-                advice: 'Oestrogen is rising. You are becoming more creative and socially open.',
-                workout: 'Light cardio or new skill learning.',
-                diet: 'Fermented foods, avocados, salads.',
-                preg: 'Medium'
-            },
-            'Ovulatory': {
-                class: 'phase-ovulatory',
-                advice: 'The peak of your cycle. Your confidence and libido are at their highest.',
-                workout: 'High-intensity (HIIT) or strength training.',
-                diet: 'Lean proteins, quinoa, plenty of water.',
-                preg: 'HIGH'
-            },
-            'Luteal': {
-                class: 'phase-luteal',
-                advice: 'Progesterone is dominant. You may feel more introverted or prone to PMS.',
-                workout: 'Resistance training or Pilates.',
-                diet: 'Complex carbs, sweet potatoes, magnesium.',
-                preg: 'Low'
-            }
+            'Menstrual': { class: 'phase-menstrual', advice: 'Your hormones are at their lowest. Prioritize rest and iron-rich foods.', workout: 'Gentle stretching or restorative yoga.', diet: 'Red meat, spinach, dark chocolate.', preg: 'Low' },
+            'Follicular': { class: 'phase-follicular', advice: 'Oestrogen is rising. You are becoming more creative and socially open.', workout: 'Light cardio or new skill learning.', diet: 'Fermented foods, avocados, salads.', preg: 'Medium' },
+            'Ovulatory': { class: 'phase-ovulatory', advice: 'The peak of your cycle. Your confidence and libido are at their highest.', workout: 'High-intensity (HIIT) or strength training.', diet: 'Lean proteins, quinoa, plenty of water.', preg: 'HIGH' },
+            'Luteal': { class: 'phase-luteal', advice: 'Progesterone is dominant. You may feel more introverted or prone to PMS.', workout: 'Resistance training or Pilates.', diet: 'Complex carbs, sweet potatoes, magnesium.', preg: 'Low' }
         };
+
+        // Google Login Setup
+        function handleCredentialResponse(response) {
+            console.log("Encoded JWT ID token: " + response.credential);
+            document.getElementById('loginOverlay').style.display = 'none';
+        }
+        function skipLogin() { document.getElementById('loginOverlay').style.display = 'none'; }
+
+        window.onload = function () {
+            google.accounts.id.initialize({
+                client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+                callback: handleCredentialResponse
+            });
+            google.accounts.id.renderButton(
+                document.getElementById("buttonDiv"),
+                { theme: "outline", size: "large", shape: "pill" }
+            );
+        }
 
         async function updateUI() {
             const res = await fetch('/api/status');
             const data = await res.json();
             const phaseKey = data.phase.split(' ')[0];
             const meta = phaseData[phaseKey] || phaseData['Menstrual'];
-
             const card = document.getElementById('phaseCard');
             card.className = `rounded-3xl p-8 text-white mb-6 shadow-2xl transition-all duration-500 ${meta.class}`;
-            
             document.getElementById('currentPhase').innerText = data.phase;
             document.getElementById('nextDate').innerText = data.next;
             document.getElementById('advice').innerText = `"${meta.advice}"`;
@@ -109,19 +123,27 @@
             document.getElementById('pregChance').innerText = meta.preg;
         }
 
-        document.getElementById('addPeriodBtn').onclick = async () => {
-            const date = prompt("Enter Start Date (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
-            if (!date) return;
-            const res = await fetch('/api/add', {
+        async function logSymptom(type) {
+            const val = prompt(`Log ${type} (scale 1-5 or brief note):`, "3");
+            if (!val) return;
+            await fetch('/api/symptoms', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ date, duration: 5 })
+                body: JSON.stringify({ date: new Date().toISOString().split('T')[0], symptoms: { [type]: val } })
             });
-            if (res.ok) {
-                updateUI();
-            } else {
-                alert("Failed to save. Check server.");
-            }
+            alert(`${type} logged!`);
+        }
+
+        document.getElementById('addPeriodBtn').onclick = async () => {
+            const date = prompt("Start Date (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
+            const duration = prompt("Duration (days):", "5");
+            if (!date) return;
+            await fetch('/api/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ date, duration })
+            });
+            updateUI();
         };
 
         updateUI();

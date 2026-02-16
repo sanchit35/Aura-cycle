@@ -22,9 +22,23 @@ class PeriodEngine {
         this.data.cycles.push({
             id: Date.now(),
             start: startDate,
-            duration: duration
+            duration: parseInt(duration) || 5
         });
         this.save();
+    }
+
+    addSymptom(date, symptoms) {
+        if (!this.data.symptoms) this.data.symptoms = [];
+        this.data.symptoms.push({
+            date,
+            ...symptoms
+        });
+        this.save();
+    }
+
+    getDailyInsights(currentDate) {
+        const symptoms = this.data.symptoms?.filter(s => s.date === currentDate) || [];
+        return symptoms;
     }
 
     predictNext() {
